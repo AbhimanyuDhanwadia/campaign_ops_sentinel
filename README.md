@@ -5,10 +5,12 @@ A portfolio-grade, safety-first agentic workflow for gaming-ad operations. It tr
 ## What works now
 
 - FastAPI API with typed campaign brief and approval contracts.
-- Deterministic policy review and synthetic inventory connector.
-- Shadow-mode recommendation flow with an explicit human-approval endpoint.
+- Durable PostgreSQL/SQLite persistence for recommendations and append-only audit events.
+- Alembic database migrations plus health and readiness endpoints.
+- API-key protection for all `/v1` endpoints when `API_KEY` is configured; production startup refuses to run without one.
+- Shadow-mode recommendation flow with explicit human approval; live campaign mutations are deliberately not implemented.
 - Agent instruction files (`agents/*/SKILL.md`) defining boundaries for future LLM-backed agents.
-- Automated tests for normal, invalid, and policy-blocked paths.
+- Automated tests for normal, invalid, policy-blocked, persistent, audit, and approval paths.
 
 ## Local setup
 
@@ -27,6 +29,34 @@ uv run ruff check .
 uv run pytest
 ```
 
+## Docker environment
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+This starts the API and a local PostgreSQL instance. Docker Compose overrides the development SQLite URL with the PostgreSQL service URL. The OpenAPI interface is available at `http://127.0.0.1:8000/docs`.
+
+## Production configuration
+
+Set these values in your secret manager or deployment environment, never in Git:
+
+```text
+APP_ENV=production
+API_KEY=<long-random-service-key>
+DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>:5432/<database>
+SHADOW_MODE=true
+```
+
+Run the migration before serving traffic:
+
+```bash
+alembic upgrade head
+```
+
+`/health` is a liveness check; `/ready` verifies database connectivity. All live integration credentials and mutation endpoints remain intentionally absent until a source-of-truth campaign API and explicit operational approval policy are available.
+
 ## Example request
 
 ```bash
@@ -37,10 +67,10 @@ curl -X POST http://127.0.0.1:8000/v1/campaigns/recommendations \
 
 ## Deliberate next additions
 
-1. Replace the synthetic inventory service with a database and an authenticated MCP/REST connector.
+1. Replace the synthetic inventory service with an authenticated MCP/REST connector.
 2. Add an LLM-backed intake agent behind a provider interface; retain schema validation and policy checks in deterministic code.
-3. Persist campaign recommendations, trace IDs, approvals, and audit events in PostgreSQL.
-4. Add a dashboard plus evaluation dataset, trace grading, and CI.
+3. Add trace export, evaluation datasets, and trace grading before enabling an LLM provider for production traffic.
+4. Integrate enterprise identity/role management instead of the service-level API key used by this baseline.
 
 ## Safety invariants
 
