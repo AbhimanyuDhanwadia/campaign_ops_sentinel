@@ -1,6 +1,7 @@
 from datetime import date
 from enum import StrEnum
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
@@ -47,6 +48,7 @@ class InventoryOption(BaseModel):
 
 
 class CampaignRecommendation(BaseModel):
+    id: UUID
     brief: CampaignBrief
     policy_findings: list[PolicyFinding]
     inventory: list[InventoryOption]
@@ -60,3 +62,10 @@ class ApprovalDecision(BaseModel):
     decision: Literal["approve", "reject"]
     reviewer: str = Field(min_length=2, max_length=80)
     note: str | None = Field(default=None, max_length=500)
+
+
+class ApprovalReceipt(BaseModel):
+    recommendation_id: UUID
+    status: Literal["recorded_in_shadow_mode"]
+    decision: Literal["approve", "reject"]
+    message: str
