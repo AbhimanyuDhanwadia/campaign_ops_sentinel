@@ -1,6 +1,19 @@
 # CampaignOps Sentinel
 
-A portfolio-grade, safety-first agentic workflow for gaming-ad operations. It transforms a validated campaign brief into a policy-reviewed inventory recommendation while operating in **Shadow Mode**: the application never creates or changes an external campaign.
+CampaignOps Sentinel is a production-oriented, safety-first agentic workflow for gaming-ad campaign operations. It turns a validated campaign brief into a policy-reviewed inventory recommendation, records every decision, and runs in **Shadow Mode** by default—no external campaign is ever created or changed.
+
+## Start here
+
+The fastest way to run the project is Docker:
+
+```bash
+git clone https://github.com/AbhimanyuDhanwadia/campaign_ops_sentinel.git
+cd campaign_ops_sentinel
+cp .env.example .env
+docker compose up --build -d
+```
+
+Use the interactive API at [http://localhost:8000/docs](http://localhost:8000/docs). Full installation, testing, API examples, and shutdown instructions are in [running.md](running.md).
 
 ## What works now
 
@@ -11,6 +24,18 @@ A portfolio-grade, safety-first agentic workflow for gaming-ad operations. It tr
 - Shadow-mode recommendation flow with explicit human approval; live campaign mutations are deliberately not implemented.
 - Agent instruction files (`agents/*/SKILL.md`) defining boundaries for future LLM-backed agents.
 - Automated tests for normal, invalid, policy-blocked, persistent, audit, and approval paths.
+
+## Architecture
+
+```text
+Campaign brief → deterministic policy review → inventory ranking → Shadow Mode recommendation
+                                                                    ↓
+                                                        human approval decision
+                                                                    ↓
+                                                    durable audit event + request ID
+```
+
+The API is backed by PostgreSQL in Docker Compose and SQLite for a zero-setup local run. Alembic manages schema migrations. Policy and validation checks are deterministic code, so an LLM cannot bypass the safety boundary.
 
 ## Local setup
 
@@ -37,6 +62,8 @@ docker compose up --build
 ```
 
 This starts the API and a local PostgreSQL instance. Docker Compose overrides the development SQLite URL with the PostgreSQL service URL. The OpenAPI interface is available at `http://127.0.0.1:8000/docs`.
+
+For the complete runbook, see [running.md](running.md).
 
 ## Production configuration
 
